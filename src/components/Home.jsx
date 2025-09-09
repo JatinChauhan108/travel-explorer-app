@@ -1,9 +1,60 @@
-import React, { useCallback, useEffect } from 'react'
+import React, { useCallback, useEffect, useState } from 'react'
 import Button from './Button'
 import Input from './Input';
+import { changeCountry, changeMedia } from '../store/gallerySlice';
+import config from '../config/config'
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useDispatch } from 'react-redux';
 
 function Home() {
-  const handleOnClick = useCallback(() => window.location.href = "https://google.com")
+  const [destination, setDestination] = useState("")
+  const navigate = useNavigate()
+  const dispatch = useDispatch()
+
+  const handleOnClick = useCallback(async() => {
+  
+    try {
+      const res1 = await fetch(`https://restcountries.com/v3.1/name/${destination}`);
+      const json1 = await res1.json();
+
+      if (json1 && json1.length > 0) {
+        const country = json1[0];
+
+        // keep only necessary info
+        const countryData = {
+          name: country.name.common,
+          flag: country.flags?.svg || country.flags?.png,
+        };
+
+        console.log(countryData)
+
+        dispatch(changeCountry(countryData)); // update country slice
+
+        // Step 2: Fetch photos for that country
+        const res2 = await fetch(
+          `https://api.unsplash.com/search/photos?page=1&query=${countryData.name}&client_id=${config.unsplashId}`
+        );
+        const json2 = await res2.json();
+
+        // Step 3: Keep only url + location
+        const media = json2.results?.map(photo => ({
+          url: photo.urls.small,
+          location: photo.location?.name || photo.alt_description || "Unknown",
+        }));
+
+        console.log(media)   
+  
+        dispatch(changeMedia(media)); // update media slice
+        
+        navigate('/gallery')
+    } else {
+      console.log("No country found");
+    }
+    } catch (error) {
+      console.log(error);
+    }
+  })
+
   return (
     <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
       {/* Left Side: Text */}
@@ -13,11 +64,10 @@ function Home() {
           Get Travel Ideas on the go
         </h1>
         <p className="text-lg mb-8 text-slate-300">
-          Anim aute id magna aliqua ad ad non deserunt sunt. Qui irure qui lorem
-          cupidatat commodo. Elit sunt amet fugiat veniam occaecat fugiat.
+          Explore breathtaking destinations, hidden gems, and personalized travel ideas — all in one place. Plan the journey of your dreams.
         </p>
-        <div className="flex gap-4 items-center">
-          <Input inputType = "text" inputLabel = "Where To ?"/>
+        <div className="flex gap-4 align-middle">
+          <Input inputType = "text" inputLabel = "Where To ?" onChange = {(e) => {setDestination(e.target.value)}}/>
           <Button onclick={handleOnClick} buttonText={"Go"}/>
         </div>
       </div>
