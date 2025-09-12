@@ -1,7 +1,7 @@
   import React, { useCallback, useEffect, useState } from 'react'
   import Button from './Button'
   import Input from './Input';
-  import { changeCountry, changeMedia, startLoading } from '../store/gallerySlice';
+  import { changeCountry, changeMedia, setError, startLoading } from '../store/gallerySlice';
   import config from '../config/config'
   import { Navigate, useNavigate } from 'react-router-dom';
   import { useDispatch } from 'react-redux';
@@ -50,9 +50,11 @@
           
       } else {
         console.log("No country found");
+        dispatch(setError("No country found with that name"))
       }
       } catch (error) {
         console.log(error);
+        dispatch(setError("Something went wrong. Please try again"))
       }
     })
 

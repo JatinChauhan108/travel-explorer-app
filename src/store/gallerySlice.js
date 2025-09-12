@@ -3,7 +3,8 @@ import { createSlice } from "@reduxjs/toolkit"
 const initialState = {
     countryData : {},
     mediaData : [],
-    loading : false
+    loading : false, 
+    error : null,
 }
 
 
@@ -15,6 +16,7 @@ const gallerySlice = createSlice({
             state.loading = true;
             state.countryData = {};
             state.mediaData = [];
+            state.error = false;
         },
         changeCountry : (state, action) => {
             state.countryData = action.payload
@@ -22,10 +24,14 @@ const gallerySlice = createSlice({
         changeMedia : (state, action) => {
             state.mediaData = action.payload
             state.loading = false;
+        },
+        setError : (state, action) => {
+            state.error = action.payload;
+            state.loading = false
         }
     }
 })
 
-export const {changeCountry, changeMedia, startLoading} = gallerySlice.actions;
+export const {changeCountry, changeMedia, startLoading, setError} = gallerySlice.actions;
 
 export default gallerySlice.reducer;

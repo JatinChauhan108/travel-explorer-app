@@ -2,12 +2,17 @@ import React, { useState, useEffect } from 'react';
 import { useSelector } from 'react-redux';
 
 const Gallery = () => {
-  const country = useSelector(state => state.countryData);
-  const media = useSelector(state => state.mediaData);
-  const loading = useSelector(state => state.loading);
+  const {countryData : country, mediaData : media, loading, error} = useSelector(state => state)
 
-  console.log(country, media, loading);
+  console.log(country, media, loading, error);
   
+  if(error){
+    return(
+      <div className="flex flex-col justify-center items-center h-screen text-red-400">
+        <p className="text-xl font-semibold">{error}</p>
+      </div>
+    )
+  }
 
   const ShimmerCard = () => (
     <div className="bg-gray-800 rounded-xl shadow-lg animate-pulse overflow-hidden">
