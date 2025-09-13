@@ -1,11 +1,24 @@
 import React, { useState, useEffect } from 'react';
-import { useSelector } from 'react-redux';
+import { useSelector, useDispatch } from 'react-redux';
+import { addFavorite, removeFavorite } from '../store/favoritesSlice';
+import { Heart } from "lucide-react";
 
 const Gallery = () => {
-  const {countryData : country, mediaData : media, loading, error} = useSelector(state => state)
+  const dispatch = useDispatch();
+  const {countryData : country, mediaData : media, loading, error} = useSelector(state => state.gallery)
+  const favorites = useSelector(state => state.favorites);
 
   console.log(country, media, loading, error);
-  
+
+  const toggleFavorite = (item) => {
+    const isFavorite = favorites.some(fav => fav.url === item.url);
+    if (isFavorite) {
+      dispatch(removeFavorite(item));
+    } else {
+      dispatch(addFavorite(item));
+    }
+  };
+
   if(error){
     return(
       <div className="flex flex-col justify-center items-center h-screen text-red-400">
@@ -52,23 +65,42 @@ const Gallery = () => {
           ? Array.from({ length: 6 }).map((_, index) => (
               <ShimmerCard key={index} />
             ))
-          : media.map((item, index) => (
-              <div
-                key={index}
-                className="bg-gray-800 rounded-xl shadow-lg hover:shadow-2xl transform hover:scale-105 transition duration-300 overflow-hidden"
-              >
-                <img
-                  src={item.url}
-                  alt={item.location || `${country.name} Image ${index + 1}`}
-                  className="w-full h-72 object-cover"
-                />
-                <div className="p-4">
-                  <p className="text-md text-gray-200 truncate">
-                    {item.location || "Unknown Location"}
-                  </p>
+          : media.map((item, index) => {
+              const isFavorite = favorites.some(fav => fav.url === item.url);
+              return (
+                <div
+                  key={index}
+                  className="relative bg-gray-800 rounded-xl shadow-lg 
+                            hover:shadow-2xl transform hover:scale-105 
+                            transition duration-300 overflow-hidden"
+                >
+                  {/* Favorite Button */}
+                  <button
+                    onClick={() => toggleFavorite(item)}
+                    className="absolute top-3 right-3 bg-black/40 rounded-full p-2 hover:bg-black/60 transition"
+                  >
+                    <Heart
+                      size={24}
+                      className={isFavorite ? "text-red-500 fill-red-500" : "text-gray-300"}
+                    />
+                  </button>
+
+                  {/* Image */}
+                  <img
+                    src={item.url}
+                    alt={item.location || `${country.name} Image ${index + 1}`}
+                    className="w-full h-72 object-cover"
+                  />
+
+                  {/* Location Text */}
+                  <div className="p-4">
+                    <p className="text-md text-gray-200 truncate">
+                      {item.location || "Unknown Location"}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
       </div>
     </div>
   );
