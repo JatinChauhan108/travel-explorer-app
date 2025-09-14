@@ -1,17 +1,34 @@
-import React, { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
-import { addFavorite, removeFavorite } from '../store/favoritesSlice';
+import React, { useEffect, useCallback } from "react";
+import { useSelector, useDispatch } from "react-redux";
+import { addFavorite, removeFavorite } from "../store/favoritesSlice";
 import { Heart } from "lucide-react";
+import { fetchMedia } from "../store/gallerySlice";
 
 const Gallery = () => {
   const dispatch = useDispatch();
-  const {countryData : country, mediaData : media, loading, error} = useSelector(state => state.gallery)
-  const favorites = useSelector(state => state.favorites);
+  const { countryData: country, mediaData: media, page, loading, error } =
+    useSelector((state) => state.gallery);
+  const favorites = useSelector((state) => state.favorites);
 
-  console.log(country, media, loading, error);
+  // ✅ Infinite scroll handler
+  const handleScroll = useCallback(() => {
+    if (
+      window.innerHeight + document.documentElement.scrollTop + 200 >=
+      document.documentElement.scrollHeight
+    ) {
+      if (!loading && country.name) {
+        dispatch(fetchMedia({ country: country.name, page: page + 1 }));
+      }
+    }
+  }, [loading, country, page, dispatch]);
+
+  useEffect(() => {
+    window.addEventListener("scroll", handleScroll);
+    return () => window.removeEventListener("scroll", handleScroll);
+  }, [handleScroll]);
 
   const toggleFavorite = (item) => {
-    const isFavorite = favorites.some(fav => fav.url === item.url);
+    const isFavorite = favorites.some((fav) => fav.url === item.url);
     if (isFavorite) {
       dispatch(removeFavorite(item));
     } else {
@@ -19,12 +36,12 @@ const Gallery = () => {
     }
   };
 
-  if(error){
-    return(
+  if (error) {
+    return (
       <div className="flex flex-col justify-center items-center h-screen text-red-400">
         <p className="text-xl font-semibold">{error}</p>
       </div>
-    )
+    );
   }
 
   const ShimmerCard = () => (
@@ -38,10 +55,9 @@ const Gallery = () => {
 
   return (
     <div className="min-h-screen bg-gradient-to-b from-gray-900 via-blue-900 to-gray-900 p-10 text-white">
-      
       {/* Country Header */}
       <div className="flex items-center space-x-4 mb-12">
-        {loading ? (
+        {loading && media.length === 0 ? (
           <div className="w-14 h-14 bg-gray-700 rounded shadow-lg animate-pulse"></div>
         ) : (
           <img
@@ -51,7 +67,7 @@ const Gallery = () => {
           />
         )}
         <h1 className="text-4xl font-extrabold tracking-wide">
-          {loading ? (
+          {loading && media.length === 0 ? (
             <div className="h-8 bg-gray-700 rounded w-48 animate-pulse"></div>
           ) : (
             country.name
@@ -61,12 +77,12 @@ const Gallery = () => {
 
       {/* Images Grid */}
       <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-3 gap-8">
-        {loading
+        {loading && media.length === 0
           ? Array.from({ length: 6 }).map((_, index) => (
               <ShimmerCard key={index} />
             ))
           : media.map((item, index) => {
-              const isFavorite = favorites.some(fav => fav.url === item.url);
+              const isFavorite = favorites.some((fav) => fav.url === item.url);
               return (
                 <div
                   key={index}
@@ -81,7 +97,9 @@ const Gallery = () => {
                   >
                     <Heart
                       size={24}
-                      className={isFavorite ? "text-red-500 fill-red-500" : "text-gray-300"}
+                      className={
+                        isFavorite ? "text-red-500 fill-red-500" : "text-gray-300"
+                      }
                     />
                   </button>
 
@@ -102,8 +120,16 @@ const Gallery = () => {
               );
             })}
       </div>
+
+      {/* Loading Spinner at bottom for infinite scroll */}
+      {loading && media.length > 0 && (
+        <div className="flex justify-center items-center py-6">
+          <div className="w-8 h-8 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+      )}
     </div>
   );
 };
 
 export default Gallery;
+
