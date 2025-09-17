@@ -5,6 +5,8 @@ import { useEffect } from "react";
 import { onAuthStateChanged } from "firebase/auth";
 import { setUser, clearUser } from "./store/authSlice";
 import { auth } from "./firebase/firebase";
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 function App() {
   const dispatch = useDispatch();
@@ -24,6 +26,7 @@ function App() {
   return (
     <>
       <div className="relative min-h-screen bg-gradient-to-br from-slate-900 to-indigo-950">
+      <ToastContainer position="top-center" autoClose={3000} />
         <Header />
         <main>
           <Outlet />

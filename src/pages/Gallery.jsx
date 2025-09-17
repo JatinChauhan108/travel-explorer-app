@@ -3,8 +3,10 @@ import { useSelector, useDispatch } from "react-redux";
 import { addFavorite, removeFavorite } from "../store/favoritesSlice";
 import { Heart } from "lucide-react";
 import { fetchMedia } from "../store/gallerySlice";
+import { toast } from "react-toastify";
 
 const Gallery = () => {
+  const user = useSelector((state) => state.auth.user);
   const dispatch = useDispatch();
   const { countryData: country, mediaData: media, page, loading, error } =
     useSelector((state) => state.gallery);
@@ -28,6 +30,11 @@ const Gallery = () => {
   }, [handleScroll]);
 
   const toggleFavorite = (item) => {
+    if(!user){
+      toast.warning("Please login to add favorites");
+      return;
+    }
+
     const isFavorite = favorites.some((fav) => fav.url === item.url);
     if (isFavorite) {
       dispatch(removeFavorite(item));
