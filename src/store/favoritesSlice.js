@@ -1,47 +1,115 @@
-import { createSlice } from "@reduxjs/toolkit";
+import { createSlice, createAsyncThunk } from "@reduxjs/toolkit";
+import { db } from "../firebase/firebase";
+import {
+  collection,
+  doc,
+  setDoc,
+  getDocs,
+  deleteDoc
+} from "firebase/firestore";
 
-// Helper functions for Local Storage
-const loadFavorites = () => {
-  try {
-    const data = localStorage.getItem("favorites");
-    return data ? JSON.parse(data) : [];
-  } catch (error) {
-    console.error("Error loading favorites from localStorage", error);
-    return [];
+// 🔹 Fetch favorites of a specific user
+export const fetchFavorites = createAsyncThunk(
+  "favorites/fetchFavorites",
+  async (userId) => {
+    if (!userId) return [];
+    const snapshot = await getDocs(collection(db, "favorites", userId, "items"));
+    return snapshot.docs.map((docSnap) => ({
+      id: docSnap.id, // Firestore auto ID
+      ...docSnap.data(),
+    }));
   }
-};
+);
 
-const saveFavorites = (favorites) => {
-  try {
-    localStorage.setItem("favorites", JSON.stringify(favorites));
-  } catch (error) {
-    console.error("Error saving favorites to localStorage", error);
+// 🔹 Add favorite
+export const addFavorite = createAsyncThunk(
+  "favorites/addFavorite",
+  async (item, { getState }) => {
+    const state = getState();
+    const userId = state.auth.user?.uid;
+    if (!userId) throw new Error("User not logged in");
+
+    // Create a new doc with auto ID
+    const favRef = doc(collection(db, "favorites", userId, "items"));
+    await setDoc(favRef, item);
+
+    return { ...item, id: favRef.id };
   }
-};
+);
+
+// 🔹 Remove favorite
+export const removeFavorite = createAsyncThunk(
+  "favorites/removeFavorite",
+  async (id, { getState }) => {
+    const state = getState();
+    const userId = state.auth.user?.uid;
+    if (!userId) throw new Error("User not logged in");
+
+    const favRef = doc(db, "favorites", userId, "items", id);
+    await deleteDoc(favRef);
+
+    return id;
+  }
+);
 
 const favoritesSlice = createSlice({
   name: "favorites",
-  initialState: loadFavorites(),
+  initialState: {
+    items: [],
+    loading: false,
+    error: null,
+  },
   reducers: {
-    addFavorite: (state, action) => {
-      const exists = state.find((fav) => fav.url === action.payload.url);
-      if (!exists) {
-        state.push(action.payload);
-        saveFavorites(state);
-      }
+    clearFavorites: (state) => {
+      state.items = [];
     },
-    removeFavorite: (state, action) => {
-      const updated = state.filter((fav) => fav.url !== action.payload.url);
-      saveFavorites(updated);
-      return updated;
-    },
-    clearFavorites: () => {
-      saveFavorites([]);
-      return [];
-    },
+  },
+  extraReducers: (builder) => {
+    builder
+      // 🔹 Fetch favorites
+      .addCase(fetchFavorites.pending, (state) => {
+        state.loading = true;
+        state.error = null;
+      })
+      .addCase(fetchFavorites.fulfilled, (state, action) => {
+        state.loading = false;
+        state.items = action.payload;
+        console.log("Fetch favorites fulfilled")
+      })
+      .addCase(fetchFavorites.rejected, (state, action) => {
+        state.loading = false;
+        state.error = action.error.message;
+        console.log("Fetch Favorites rejected")
+      })
+
+      // 🔹 Add favorite
+      .addCase(addFavorite.pending, (state) => {
+        state.error = null;
+      })
+      .addCase(addFavorite.fulfilled, (state, action) => {
+        const exists = state.items.find((fav) => fav.url === action.payload.url);
+        if (!exists) {
+          state.items.push(action.payload);
+        }
+      })
+      .addCase(addFavorite.rejected, (state, action) => {
+        state.error = action.error.message;
+      })
+
+      // 🔹 Remove favorite
+      .addCase(removeFavorite.fulfilled, (state, action) => {
+        state.items = state.items.filter((fav) => fav.id !== action.payload);
+        console.log("Remove Favorite fulfilled")
+      })
+      .addCase(removeFavorite.pending, (state, action) =>{
+        console.log("Remove Favorite Pending")
+      })
+      .addCase(removeFavorite.rejected, (state, action) => {
+        state.error = action.error.message;
+      });
   },
 });
 
-export const { addFavorite, removeFavorite, clearFavorites } = favoritesSlice.actions;
+export const { clearFavorites } = favoritesSlice.actions;
 export default favoritesSlice.reducer;
 

@@ -1,4 +1,5 @@
 import { createSlice } from "@reduxjs/toolkit";
+import { fetchFavorites } from "./favoritesSlice";
 
 const authSlice = createSlice({
   name: "auth",
@@ -10,6 +11,7 @@ const authSlice = createSlice({
     setUser: (state, action) => {
       state.user = action.payload;
       state.loading = false;
+      fetchFavorites(state.user.uid);
     },
     clearUser: (state) => {
       state.user = null;

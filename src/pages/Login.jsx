@@ -9,6 +9,7 @@ import {
 } from "firebase/auth";
 import { setUser, clearUser } from "../store/authSlice";
 import { Mail, Lock } from "lucide-react";
+import { mapFirebaseUser } from "../utils/mapFirebaseUser";
 
 const Login = () => {
    
@@ -20,16 +21,16 @@ const Login = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const [error, setError] = useState(null);
 
-    useEffect(() => {
-        setEmail("");
-        setPassword("");
-    }, []);
+  useEffect(() => {
+      setEmail("");
+      setPassword("");
+  }, []);
 
   // Google login
   const handleGoogleLogin = async () => {
     try {
       const result = await signInWithPopup(auth, googleProvider);
-      dispatch(setUser(result.user));
+      dispatch(setUser(mapFirebaseUser(result.user)));
       setError(null);
     } catch (err) {
       setError(err.message);
@@ -45,7 +46,7 @@ const Login = () => {
       } else {
         result = await signInWithEmailAndPassword(auth, email, password);
       }
-      dispatch(setUser(result.user));
+      dispatch(setUser(mapFirebaseUser(result.user)));
       setError(null);
     } catch (err) {
       setError(err.message);

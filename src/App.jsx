@@ -7,6 +7,8 @@ import { setUser, clearUser } from "./store/authSlice";
 import { auth } from "./firebase/firebase";
 import { ToastContainer } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { mapFirebaseUser } from "./utils/mapFirebaseUser";
+import { fetchFavorites } from "./store/favoritesSlice";
 
 function App() {
   const dispatch = useDispatch();
@@ -15,7 +17,9 @@ function App() {
     // Firebase listener for login/logout
     const unsubscribe = onAuthStateChanged(auth, (firebaseUser) => {
       if (firebaseUser) {
-        dispatch(setUser(firebaseUser));
+        const user = mapFirebaseUser(firebaseUser);
+        dispatch(setUser(user));               // set auth state
+        dispatch(fetchFavorites(user.uid));    // fetch favorites immediately
       } else {
         dispatch(clearUser());
       }

@@ -35,9 +35,9 @@ const Gallery = () => {
       return;
     }
 
-    const isFavorite = favorites.some((fav) => fav.url === item.url);
-    if (isFavorite) {
-      dispatch(removeFavorite(item));
+    const favEntry = favorites.items.find((fav) => fav.url === item.url);
+    if (favEntry) {
+      dispatch(removeFavorite(favEntry.id));
     } else {
       dispatch(addFavorite(item));
     }
@@ -89,7 +89,7 @@ const Gallery = () => {
               <ShimmerCard key={index} />
             ))
           : media.map((item, index) => {
-              const isFavorite = favorites.some((fav) => fav.url === item.url);
+              const isFavorite = favorites.items.some((fav) => fav.url === item.url);
               return (
                 <div
                   key={index}
